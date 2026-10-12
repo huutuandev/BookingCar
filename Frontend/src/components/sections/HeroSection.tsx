@@ -47,8 +47,6 @@ export const HeroSection: React.FC = () => {
               </Button>
             </div>
 
-            <p className="text-xs text-ink-muted">Hotline demo: 1900 1234</p>
-
             {/* 3 Trust Badges */}
             <div className="pt-6 border-t border-slate-100 flex flex-wrap items-center gap-6 text-xs text-[#64748B]">
               <div className="flex items-center gap-2 font-medium">

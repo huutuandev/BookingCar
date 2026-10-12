@@ -58,7 +58,7 @@ BookingCar/
 ├── README.md
 ├── .gitignore
 └── Frontend/
-    ├── frontend.mdc            # Quy tắc phát triển frontend
+    ├── frontend.mdc            # Quy tắc local, không được Git theo dõi
     ├── README.md               # Hướng dẫn tổ chức mã nguồn
     ├── package.json
     ├── package-lock.json
@@ -99,7 +99,7 @@ BookingCar/
 
 ## Quy trình đóng góp
 
-1. Đọc [frontend.mdc](./Frontend/frontend.mdc) trước khi viết hoặc review code.
+1. Đọc file quy tắc `Frontend/frontend.mdc` trên máy local (nếu có) trước khi viết hoặc review code. File này không được đưa lên GitHub.
 2. Đặt code đúng trách nhiệm; tách xử lý nghiệp vụ khỏi component trình bày và tái sử dụng các tiện ích chung.
 3. Giữ phạm vi thay đổi phù hợp với yêu cầu; không thêm dependency hoặc thư mục chưa cần dùng.
 4. Chạy `npm run lint` và `npm run build` trước khi merge.

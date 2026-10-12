@@ -1,4 +1,4 @@
-name: Frontend CI
+name: Frontend CI/CD
 
 on:
   push:
@@ -66,6 +66,7 @@ jobs:
       VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
       VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
       VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+      PRODUCTION_URL: https://booking-car-pi.vercel.app
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -86,19 +87,38 @@ jobs:
               exit 1
             fi
           done
-      - name: Install dependencies
-        run: npm ci --prefix Frontend
+      - name: Download validated production build
+        uses: actions/download-artifact@v4
+        with:
+          name: frontend-dist
+          path: Frontend/dist
       - name: Install Vercel CLI
         run: npm install --global vercel@63.1.2
       - name: Pull production configuration
         run: vercel pull --yes --environment=production --token="$VERCEL_TOKEN"
-      - name: Build for Vercel
-        run: vercel build --prod --token="$VERCEL_TOKEN"
+      - name: Package validated static build for Vercel
+        run: node .github/scripts/package-vercel.mjs
       - name: Deploy prebuilt output
         id: deployment
         shell: bash
         run: |
-          deployment_url=$(vercel deploy --prebuilt --prod --token="$VERCEL_TOKEN")
+          deployment_url=$(vercel deploy --yes --prebuilt --prod --token="$VERCEL_TOKEN")
           echo "url=$deployment_url" >> "$GITHUB_OUTPUT"
           echo "### Production deployment" >> "$GITHUB_STEP_SUMMARY"
           echo "$deployment_url" >> "$GITHUB_STEP_SUMMARY"
+          echo "Production domain: $PRODUCTION_URL" >> "$GITHUB_STEP_SUMMARY"
+      - name: Verify production domain serves this build
+        shell: bash
+        run: |
+          for attempt in {1..12}; do
+            if curl --fail --silent --show-error --location --max-time 20 \
+              -H 'Cache-Control: no-cache' \
+              "$PRODUCTION_URL/?ci=$GITHUB_SHA" -o /tmp/production-index.html \
+              && cmp -s Frontend/dist/index.html /tmp/production-index.html; then
+              echo "Verified production build at $PRODUCTION_URL" >> "$GITHUB_STEP_SUMMARY"
+              exit 0
+            fi
+            sleep 5
+          done
+          echo "::error::Production domain does not serve this build. Check that booking-car-pi.vercel.app belongs to VERCEL_PROJECT_ID and is assigned to production."
+          exit 1

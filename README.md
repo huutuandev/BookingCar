@@ -129,13 +129,14 @@ Dự án chưa có tích hợp API, đăng nhập, thanh toán hoặc luồng đ
 Workflow nằm tại [`.github/workflows/frontend-ci.yml`](./.github/workflows/frontend-ci.yml).
 
 - **CI:** chạy khi push vào `main`, mở/cập nhật pull request tới `main` hoặc chạy thủ công. Pipeline cài dependency bằng `npm ci`, chạy lint, build và lưu artifact `frontend-dist` trong 7 ngày.
-- **CD:** chỉ triển khai production từ `main` sau khi CI thành công. Pipeline lấy cấu hình production, build bằng Vercel CLI và triển khai output đã build. Pull request không sử dụng secrets triển khai.
+- **CD:** chỉ triển khai production từ `main` sau khi CI thành công. Pipeline tải artifact `frontend-dist` của chính lần chạy CI, lấy cấu hình project production, đóng gói theo Build Output API v3 và deploy bằng `vercel deploy --prebuilt --prod`. Không build lại trong CD. Pull request không sử dụng secrets triển khai.
+- **Kiểm tra sau deploy:** pipeline tải trang `https://booking-car-pi.vercel.app/` và so sánh HTML với bản build của CI; nếu domain chưa phục vụ đúng bản build, job báo lỗi.
 - Node.js 22 được dùng trong pipeline. Nếu thiếu secret, job CD dừng và thông báo tên cấu hình còn thiếu.
 
 ### Thiết lập lần đầu
 
-1. Tạo project Vercel cho frontend. Nếu import repository, đặt **Root Directory** là `Frontend`, framework là **Vite** và Node.js là **22.x**.
-2. Tạo token trong tài khoản Vercel. Chạy `npx vercel@63.1.2 link` tại gốc repository để liên kết project; lấy `orgId` và `projectId` trong `.vercel/project.json`.
+1. Mở **project Vercel hiện có** đang sở hữu `booking-car-pi.vercel.app`. Trong **Settings → Domains**, kiểm tra domain này được gán cho production của project. Nếu import repository, đặt **Root Directory** là `Frontend`, framework là **Vite** và Node.js là **22.x**. Không tạo project mới nếu muốn giữ domain hiện tại.
+2. Tạo token tại [Vercel Tokens](https://vercel.com/account/tokens). Chạy `npx vercel@63.1.2 link` tại gốc repository và chọn đúng team/project ở bước 1; lấy `orgId` và `projectId` trong `.vercel/project.json`. Không gửi token qua chat hoặc ghi vào mã nguồn.
 3. Trong GitHub repository, vào **Settings → Secrets and variables → Actions**, thêm ba repository secrets:
 
    | Secret | Giá trị |
@@ -147,7 +148,9 @@ Workflow nằm tại [`.github/workflows/frontend-ci.yml`](./.github/workflows/f
 4. Đảm bảo Vercel không tự deploy qua Git song song với pipeline. `Frontend/vercel.json` đặt `git.deploymentEnabled: false` để GitHub Actions quản lý triển khai.
 5. Commit/push cấu hình cùng thư mục `Frontend` lên `main`. Theo dõi workflow trong tab **Actions**; URL triển khai xuất hiện trong job summary và environment `production` khi CD thành công.
 
-Có thể chạy lại bằng **Actions → Frontend CI → Run workflow**, chọn nhánh `main`. Chạy thủ công trên nhánh khác chỉ thực hiện CI.
+Có thể chạy lại bằng **Actions → Frontend CI/CD → Run workflow**, chọn nhánh `main`. Chạy thủ công trên nhánh khác chỉ thực hiện CI.
+
+Pipeline hiện triển khai frontend tĩnh, chưa cần biến môi trường build. Nếu sau này thêm biến `VITE_*`, phải cung cấp chúng trong job `validate` trước bước build; chúng sẽ được công khai trong JavaScript trình duyệt. Nếu thêm backend hoặc SSR, cần đổi cách đóng gói thay vì chỉ sao chép `dist`.
 
 Không commit token, file `.vercel` hoặc các cấu hình production được CLI tải xuống. Thư mục `.vercel` đã được Git bỏ qua. Nếu cần bắt buộc CI đạt trước khi merge, cấu hình branch protection cho `main` với status check **Lint and build** sau lần chạy đầu tiên.
 

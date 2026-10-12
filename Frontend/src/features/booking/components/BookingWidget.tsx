@@ -75,10 +75,8 @@ export const BookingWidget = () => {
                   <Car size={16} className="shrink-0 text-ink-muted" aria-hidden="true" />
                   <select id="booking-vehicle" required value={formData.rentalVehicle} onChange={(e) => setFormData({ ...formData, rentalVehicle: e.target.value })} className={inputStyles}>
                     <option value="" disabled>Chọn nhu cầu xe</option>
-                    <option value="4-seat">Xe 4 chỗ</option>
+                    <option value="5-seat">Xe 5 chỗ</option>
                     <option value="7-seat">Xe 7 chỗ</option>
-                    <option value="16-seat">Xe 16 chỗ</option>
-                    <option value="consultation">Cần tư vấn loại xe</option>
                   </select>
                 </div>
               </>
